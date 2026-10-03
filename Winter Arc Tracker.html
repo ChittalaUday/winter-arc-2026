@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Winter Arc Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b0c;--bg2:#141416;--card:#1a1a1d;--ink:#f4f4f2;--mute:#9a9aa0;--acc:#ffd400;--acc-ink:#111;--hot:#ff3b1f;--line:#2b2b30;--steel:#3a3a40;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#e9e9e6;--bg2:#dededa;--card:#fff;--ink:#141416;--mute:#5d5d63;--acc:#f2b800;--line:#cfcfca;--steel:#bdbdb8}}
+:root[data-theme="light"]{--bg:#e9e9e6;--bg2:#dededa;--card:#fff;--ink:#141416;--mute:#5d5d63;--acc:#f2b800;--line:#cfcfca;--steel:#bdbdb8}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:400 15px/1.5 Inter,system-ui,sans-serif;background:var(--bg) repeating-linear-gradient(135deg,transparent 0 22px,rgba(255,255,255,.025) 22px 44px)}
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 70px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:4px solid var(--acc);padding-bottom:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:64px;height:auto;color:var(--acc)}
+h1{font:400 clamp(38px,9vw,60px)/.95 'Bebas Neue',Impact,sans-serif;text-transform:uppercase;margin:0;letter-spacing:2px}
+h1 span{color:var(--acc)}
+.tag{font:700 12px Oswald,Impact,sans-serif;letter-spacing:4px;color:var(--mute);text-transform:uppercase}
+h2{font:400 26px 'Bebas Neue',Impact,sans-serif;text-transform:uppercase;letter-spacing:2px;margin:0 0 12px;display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:10px;height:22px;background:var(--acc);transform:skewX(-14deg)}
+.me{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--steel);border-radius:6px;padding:6px 8px 6px 14px;font:700 15px Oswald,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.card{background:var(--card);border:2px solid var(--line);border-left:6px solid var(--acc);border-radius:6px;padding:18px;margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:16px}
+.stat{background:var(--card);border:2px solid var(--line);border-radius:50% / 14%;border-radius:10px;padding:14px;text-align:center;position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:repeating-linear-gradient(135deg,var(--acc) 0 10px,#111 10px 20px)}
+.stat b{display:block;font:400 54px/1 'Bebas Neue',Impact,sans-serif;color:var(--acc);margin-top:6px}
+.stat small{font:700 12px Oswald,sans-serif;letter-spacing:2px;text-transform:uppercase;color:var(--mute)}
+.bar{height:22px;background:var(--bg2);border:2px solid var(--steel);border-radius:4px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:repeating-linear-gradient(135deg,var(--acc) 0 12px,#d9b400 12px 24px)}
+form.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+input,select,button{font:inherit;padding:11px 12px;border-radius:4px;border:2px solid var(--steel);background:var(--bg2);color:var(--ink);min-width:0}
+input:focus,select:focus{outline:0;border-color:var(--acc)}
+button{background:var(--acc);color:var(--acc-ink);border:2px solid var(--acc);font:700 15px Oswald,Impact,sans-serif;text-transform:uppercase;letter-spacing:2px;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:none;color:var(--mute);border:0;padding:4px 8px;letter-spacing:1px}
+.authwrap{display:grid;grid-template-columns:1.1fr 1fr;gap:24px;align-items:center;margin-top:30px}
+.hero h2{font-size:clamp(46px,9vw,84px);line-height:.92;display:block;margin:0 0 10px}
+.hero h2::before{display:none}
+.hero h2 em{font-style:normal;color:var(--acc)}
+.hero svg{width:100%;max-width:340px;color:var(--steel);margin-top:10px}
+.hero p{max-width:380px}
+.auth{margin:0}
+.auth form{display:grid;gap:10px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{flex:1;background:var(--bg2);color:var(--mute);border-color:var(--steel)}
+.tabs button.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+.chart{display:flex;align-items:flex-end;gap:5px;height:120px;overflow-x:auto;border-bottom:3px solid var(--steel)}
+.chart div{flex:1;min-width:14px;background:var(--steel);border-radius:3px 3px 0 0}
+.chart div.on{background:var(--acc)}
+.log{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.log:first-child{border-top:0}
+.log b{font:700 17px Oswald,sans-serif;text-transform:uppercase;letter-spacing:1px;color:var(--acc)}
+.lb{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.lb:first-child{border-top:0}
+.lb .n{flex:1;font:700 17px Oswald,sans-serif;text-transform:uppercase;letter-spacing:1px}
+.rank{font:400 30px 'Bebas Neue',sans-serif;width:34px;color:var(--mute)}
+.lb:nth-child(1) .rank{color:#ffd400}.lb:nth-child(2) .rank{color:#c9ced6}.lb:nth-child(3) .rank{color:#d08a4e}
+.mute{color:var(--mute)}.err{color:var(--hot);min-height:1.4em;margin:6px 0 0}
+@media (max-width:700px){.authwrap{grid-template-columns:1fr}.logo svg{width:48px}}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ring{display:flex;align-items:center;gap:16px}.ring svg{width:110px;height:110px;flex:none}.ring text{font:400 30px 'Bebas Neue',sans-serif;fill:var(--ink)}
+.meter{margin:8px 0}.meter .bar{height:14px;margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:2px solid var(--acc);border-radius:4px;padding:6px 10px;font:700 13px Oswald,sans-serif;text-transform:uppercase;letter-spacing:1px}.chip.off{border-color:var(--steel);color:var(--mute);opacity:.6}
+.row2{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)}.row2:first-child{border-top:0}
+.cmp table{width:100%;border-collapse:collapse}.cmp td,.cmp th{padding:6px;text-align:center;border-top:1px solid var(--line)}
+.plan{font:500 18px/1.4 Oswald,sans-serif;letter-spacing:.5px}
+.tools{display:flex;gap:8px;align-items:center}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo"><svg viewBox="0 0 240 70" fill="currentColor" aria-hidden="true"><rect x="0" y="22" width="10" height="26" rx="2"/><rect x="12" y="10" width="14" height="50" rx="3"/><rect x="28" y="2" width="14" height="66" rx="3"/><rect x="44" y="30" width="152" height="10" rx="2"/><rect x="198" y="2" width="14" height="66" rx="3"/><rect x="214" y="10" width="14" height="50" rx="3"/><rect x="230" y="22" width="10" height="26" rx="2"/></svg><div><h1>Winter <span>Arc</span></h1><div class="tag">Train hard · Track harder</div></div></div>
+  <div class="tools"><button id="theme" class="ghost" type="button">◐ Theme</button><div class="me" id="me" hidden><b id="meName"></b><button class="ghost" id="out" type="button">Log out</button></div></div>
+</header>
+
+<div id="authwrap" class="authwrap">
+<div class="hero">
+  <h2>No days <em>off.</em><br>Own your winter.</h2>
+  <p class="mute">Log every session, build your streak and climb the leaderboard. 90 days. Zero excuses.</p>
+  <svg viewBox="0 0 240 70" fill="currentColor" aria-hidden="true"><rect x="0" y="22" width="10" height="26" rx="2"/><rect x="12" y="10" width="14" height="50" rx="3"/><rect x="28" y="2" width="14" height="66" rx="3"/><rect x="44" y="30" width="152" height="10" rx="2"/><rect x="198" y="2" width="14" height="66" rx="3"/><rect x="214" y="10" width="14" height="50" rx="3"/><rect x="230" y="22" width="10" height="26" rx="2"/></svg>
+</div>
+<section id="auth" class="card auth">
+  <div class="tabs"><button id="tLogin" class="on" type="button">Log in</button><button id="tSign" type="button">Sign up</button></div>
+  <form id="af" autocomplete="on">
+    <input id="u" placeholder="Username" autocomplete="username" maxlength="20" required>
+    <input id="p" type="password" placeholder="Password" autocomplete="current-password" maxlength="64" required>
+    <input id="g" placeholder="Your winter arc goal (optional)" maxlength="60" hidden>
+    <button id="go" type="submit">Log in</button>
+  </form>
+  <p class="err" id="err"></p>
+  <p class="mute" style="margin:0;font-size:13px">Username: 3–20 letters, numbers or _ · Password: 4+ characters</p>
+</section>
+</div>
+
+<main id="app" hidden>
+  <div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h2 style="margin:0" id="pName"></h2><div class="mute" id="pGoal"></div></div><button class="ghost" id="editG" type="button">Edit goal</button></div></div>
+  <div class="card"><h2>Arc progress</h2><div id="prog" class="mute"></div><div class="bar"><i id="progbar" style="width:0"></i></div></div>
+  <div class="stats" id="stats"></div>
+  <div class="card"><h2>Today's plan</h2><div class="plan" id="plan"></div></div>
+  <div class="two">
+    <div class="card"><h2>Weekly goal</h2><div class="ring" id="ring"></div></div>
+    <div class="card"><h2>Today's fuel</h2><div id="fuel"></div></div>
+  </div>
+  <div class="card"><h2>My targets</h2>
+    <form class="g" id="tf"><input type="number" id="tw" min="1" max="7" placeholder="Workouts / week"><input type="number" id="tc" min="500" max="10000" placeholder="Calories / day"><input type="number" id="tp" min="10" max="500" placeholder="Protein g / day"><button type="submit">Save targets</button></form></div>
+  <div class="card"><h2>Log a meal</h2>
+    <form class="g" id="mf"><input id="ml" maxlength="40" placeholder="Meal (optional)"><input type="number" id="mc" min="0" max="5000" placeholder="Calories" required><input type="number" id="mp" min="0" max="300" placeholder="Protein g" required><button type="submit">Fuel up</button></form></div>
+  <div class="card"><h2>Personal records</h2>
+    <form class="g" id="prf"><select id="pl"><option>Bench press</option><option>Squat</option><option>Deadlift</option><option>Overhead press</option><option>Pull-up (+kg)</option></select><input type="number" id="pk" min="1" max="700" step="0.5" placeholder="Weight kg" required><button type="submit">Log lift</button></form>
+    <p class="mute" id="prmsg" style="margin:8px 0"></p><div id="prs" class="mute">No lifts logged yet.</div></div>
+  <div class="card"><h2>Badges</h2><div class="chips" id="badges"></div></div>
+  <div class="card cmp" id="cmp" hidden></div>
+  <div class="card"><h2>Log your set</h2>
+    <form class="g" id="f">
+      <input type="date" id="d" required>
+      <select id="t"><option>Gym</option><option>Run</option><option>Walk</option><option>Yoga</option><option>Sports</option><option>Cycling</option><option>Home workout</option></select>
+      <input type="number" id="m" min="1" max="600" placeholder="Minutes" required>
+      <input type="number" id="w" min="20" max="400" step="0.1" placeholder="Weight kg (optional)">
+      <input type="text" id="n" maxlength="80" placeholder="Note (optional)">
+      <button type="submit">Lift it</button>
+    </form>
+  </div>
+  <div class="card"><h2>Last 14 days (minutes)</h2><div class="chart" id="chart"></div></div>
+  <div class="card"><h2>Gym leaderboard</h2><div id="lb" class="mute">Loading…</div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Workout history</h2><button id="exp" type="button">Export CSV</button></div><div style="height:10px"></div><div id="logs" class="mute">No sessions yet. Start today.</div></div>
+</main>
+</div>
+
+<script>
+const ARC_START = new Date('2026-10-01T00:00:00'), ARC_DAYS = 90;
+const $ = id => document.getElementById(id);
+const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let prs = [], meals = [], boardRows = [], dl = null;
+let db, cur = null, logs = [], acct = null, unsubs = [], mode = 'login', fails = 0, lockUntil = 0;
+
+async function hashPw(pw, saltB64){
+  const salt = saltB64 ? Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)) : crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt, iterations:150000, hash:'SHA-256'}, key, 256);
+  const b64 = a => btoa(String.fromCharCode(...new Uint8Array(a)));
+  return {salt: b64(salt), hash: b64(bits)};
+}
+function setMode(m){
+  mode = m; $('tLogin').className = m==='login'?'on':''; $('tSign').className = m==='sign'?'on':'';
+  $('g').hidden = m!=='sign'; $('go').textContent = m==='sign'?'Create account':'Log in';
+  $('p').autocomplete = m==='sign'?'new-password':'current-password'; $('err').textContent = '';
+}
+$('tLogin').onclick = () => setMode('login'); $('tSign').onclick = () => setMode('sign');
+
+$('af').addEventListener('submit', async ev => {
+  ev.preventDefault(); $('err').textContent = '';
+  if(!db){ $('err').textContent = 'Open this page from its claude.ai link while signed in to claude.ai.'; return; }
+  if(Date.now() < lockUntil){ $('err').textContent = 'Too many tries. Wait a few seconds.'; return; }
+  const u = $('u').value.trim().toLowerCase(), pw = $('p').value;
+  if(!/^[a-z0-9_]{3,20}$/.test(u)){ $('err').textContent = 'Username must be 3–20 letters, numbers or _.'; return; }
+  if(pw.length < 4){ $('err').textContent = 'Password must be at least 4 characters.'; return; }
+  $('go').disabled = true;
+  try {
+    const ref = db.doc('accounts/' + u), snap = await ref.get();
+    if(mode === 'sign'){
+      if(snap.exists){ $('err').textContent = 'That username is taken.'; return; }
+      await ref.set({...(await hashPw(pw)), goal: $('g').value.trim(), created: Date.now()});
+      start(u);
+    } else {
+      const a = snap.exists ? snap.data() : null;
+      const ok = a && (await hashPw(pw, a.salt)).hash === a.hash;
+      if(!ok){ if(++fails >= 5){ lockUntil = Date.now() + 10000; fails = 0; } $('err').textContent = 'Wrong username or password.'; return; }
+      fails = 0; start(u);
+    }
+  } catch(e){ $('err').textContent = 'Something went wrong. Try again.'; }
+  finally { $('go').disabled = false; }
+});
+
+function stats(){
+  const days = new Set(logs.map(l => l.date));
+  let streak = 0, d = new Date();
+  if(!days.has(iso(d))) d.setDate(d.getDate()-1);
+  while(days.has(iso(d))){ streak++; d.setDate(d.getDate()-1); }
+  const mins = logs.reduce((a,l) => a + (+l.min||0), 0);
+  const ws = logs.filter(l => l.weight).sort((a,b) => a.date.localeCompare(b.date));
+  const dw = ws.length > 1 ? ws[ws.length-1].weight - ws[0].weight : null;
+  return {streak, mins, sessions: logs.length, active: days.size, dw};
+}
+function render(){
+  const s = stats();
+  const dayNo = Math.min(ARC_DAYS, Math.max(0, Math.floor((new Date() - ARC_START)/864e5) + 1));
+  $('prog').textContent = `Day ${dayNo} of ${ARC_DAYS} · ${s.active} active days`;
+  $('progbar').style.width = (dayNo/ARC_DAYS*100) + '%';
+  $('stats').innerHTML = [[s.streak,'day streak'],[s.sessions,'workouts'],[Math.round(s.mins/60*10)/10,'hours trained'],[s.dw===null?'–':(s.dw>0?'+':'')+s.dw.toFixed(1),'kg change']]
+    .map(([a,b]) => `<div class="stat"><b>${a}</b><small>${b}</small></div>`).join('');
+  const byDay = {}; logs.forEach(l => byDay[l.date] = (byDay[l.date]||0) + (+l.min||0));
+  const last = [...Array(14)].map((_,i) => { const d = new Date(); d.setDate(d.getDate()-13+i); return iso(d); });
+  const max = Math.max(30, ...last.map(k => byDay[k]||0));
+  $('chart').innerHTML = last.map(k => `<div class="${byDay[k]?'on':''}" title="${k}: ${byDay[k]||0} min" style="height:${Math.max(4,(byDay[k]||0)/max*100)}%"></div>`).join('');
+  const sorted = [...logs].sort((a,b) => b.date.localeCompare(a.date) || b.ts - a.ts);
+  $('logs').innerHTML = sorted.length ? sorted.map(l => `<div class="log"><div><b>${esc(l.type)}</b> · ${l.min} min${l.weight?` · ${l.weight} kg`:''}<div class="mute">${esc(l.date)}${l.note?' · '+esc(l.note):''}</div></div><button class="ghost" data-k="${esc(l.k)}">Delete</button></div>`).join('') : 'No sessions yet. Start today.';
+}
+async function publishBoard(){
+  if(!cur) return; const s = stats();
+  try { await db.doc('board/' + cur).set({minutes: s.mins, sessions: s.sessions, streak: s.streak, active: s.active}); } catch(e){}
+}
+function renderBoard(snap){
+  const rows = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (b.active-a.active) || (b.minutes-a.minutes)); boardRows = rows;
+  $('lb').innerHTML = rows.length ? rows.map((r,i) => `<div class="lb" data-id="${esc(r.id)}" style="cursor:pointer" title="Tap to compare"><span class="rank">${i+1}</span><span class="n">${esc(r.id)}${r.id===cur?' (you)':''}</span><span class="mute">${r.active} days · ${r.streak}🔥 · ${Math.round(r.minutes/60)}h</span></div>`).join('') : 'Be the first on the board.';
+}
+function start(u){
+  cur = u; try { sessionStorage.setItem('wa_user', u); } catch(e){}
+  $('authwrap').hidden = true; $('app').hidden = false; $('me').hidden = false;
+  $('meName').textContent = u; $('pName').textContent = u; $('d').value = iso(new Date());
+  unsubs.push(db.doc('accounts/' + u).onSnapshot(sn => { acct = sn.exists ? sn.data() : {}; $('pGoal').textContent = acct.goal ? 'Goal: ' + acct.goal : 'No goal set yet'; fillTargets(); renderExtras(); }));
+  unsubs.push(db.collection('logs/' + u + '/entries').onSnapshot(sn => { logs = sn.docs.map(d => ({k: d.id, ...d.data()})).filter(l => l.date); render(); renderExtras(); publishBoard(); }, () => { $('logs').textContent = 'Could not load your log.'; }));
+  unsubs.push(db.collection('logs/' + u + '/prs').onSnapshot(sn => { prs = sn.docs.map(d => ({k: d.id, ...d.data()})); renderExtras(); }));
+  unsubs.push(db.collection('logs/' + u + '/meals').onSnapshot(sn => { meals = sn.docs.map(d => d.data()).filter(m => m.date); renderExtras(); }));
+  unsubs.push(db.collection('board').onSnapshot(renderBoard, () => { $('lb').textContent = 'Leaderboard unavailable.'; }));
+}
+function logout(){
+  unsubs.forEach(f => { try { f(); } catch(e){} }); unsubs = []; cur = null; logs = []; acct = null; prs = []; meals = []; $('cmp').hidden = true;
+  try { sessionStorage.removeItem('wa_user'); } catch(e){}
+  $('p').value = ''; $('app').hidden = true; $('me').hidden = true; $('authwrap').hidden = false;
+}
+$('out').onclick = logout;
+$('editG').onclick = async () => {
+  const g = prompt('Your goal:', (acct && acct.goal) || ''); if(g === null) return;
+  try { await db.doc('accounts/' + cur).update({goal: g.trim().slice(0,60)}); } catch(e){ alert('Could not save.'); }
+};
+$('f').addEventListener('submit', async ev => {
+  ev.preventDefault(); const w = parseFloat($('w').value);
+  const rec = {date: $('d').value, type: $('t').value, min: parseInt($('m').value,10), note: $('n').value.trim(), ts: Date.now()};
+  if(w) rec.weight = w;
+  try { await db.doc('logs/' + cur + '/entries/' + rec.date + '-' + rec.ts).set(rec); $('m').value=''; $('w').value=''; $('n').value=''; } catch(e){ alert('Could not save. Try again.'); }
+});
+$('logs').addEventListener('click', async ev => {
+  const k = ev.target.dataset && ev.target.dataset.k; if(!k) return;
+  try { await db.doc('logs/' + cur + '/entries/' + k).delete(); } catch(e){}
+});
+const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
+function weekStart(){ const d = new Date(); d.setDate(d.getDate() - (d.getDay()+6)%7); return iso(d); }
+function fillTargets(){
+  if(!acct || ['tw','tc','tp'].includes(document.activeElement && document.activeElement.id)) return;
+  $('tw').value = acct.weeklyGoal || ''; $('tc').value = acct.calTarget || ''; $('tp').value = acct.proTarget || '';
+}
+function meter(label, val, goal, unit){
+  const pct = goal ? Math.min(100, val/goal*100) : 0;
+  return `<div class="meter"><div style="display:flex;justify-content:space-between"><span>${label}</span><span class="mute">${Math.round(val)}${goal?' / '+goal:''} ${unit}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+function renderExtras(){
+  if(!cur || !acct) return;
+  const s = stats(), today = iso(new Date()), ws = weekStart();
+  const goal = acct.weeklyGoal || 4;
+  const weekDone = new Set(logs.filter(l => l.date >= ws).map(l => l.date)).size;
+  const C = 2*Math.PI*42, off = C*(1 - Math.min(1, weekDone/goal));
+  $('ring').innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--steel)" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90 50 50)"/><text x="50" y="58" text-anchor="middle">${weekDone}/${goal}</text></svg><div><b>${weekDone >= goal ? 'Goal smashed!' : (goal - weekDone) + ' more workout' + (goal-weekDone>1?'s':'') + ' this week'}</b><div class="mute">Weeks run Monday to Sunday.</div></div>`;
+  const tm = meals.filter(m => m.date === today);
+  const cal = tm.reduce((a,m) => a + (+m.cal||0), 0), pro = tm.reduce((a,m) => a + (+m.pro||0), 0);
+  $('fuel').innerHTML = meter('Calories', cal, acct.calTarget, 'kcal') + meter('Protein', pro, acct.proTarget, 'g') + (acct.calTarget||acct.proTarget ? '' : '<div class="mute">Set your targets below.</div>');
+  // plan
+  const trained = logs.some(l => l.date === today);
+  const lastLog = [...logs].sort((a,b) => b.date.localeCompare(a.date) || b.ts - a.ts)[0];
+  const since = lastLog ? Math.floor((new Date(today) - new Date(lastLog.date))/864e5) : null;
+  const next = {Gym:'a run or a walk', Run:'a gym session', Walk:'a gym session', Yoga:'a gym session', Sports:'a gym or yoga session', Cycling:'a gym session', 'Home workout':'a run or a walk'};
+  let plan;
+  if(!lastLog) plan = 'Day one. Log any session today, even 20 minutes, and start your streak.';
+  else if(trained) plan = `Session done today. ${acct.proTarget && pro < acct.proTarget ? Math.round(acct.proTarget-pro)+' g of protein to go. ' : ''}Eat, hydrate and sleep well.`;
+  else if(s.streak >= 4) plan = `${s.streak}-day streak. Take a rest or mobility day today and come back stronger.`;
+  else if(since >= 3) plan = `${since} days off. Ease back in with a 20-minute walk or a light session today.`;
+  else plan = `Time to train. After ${lastLog.type.toLowerCase()}, try ${next[lastLog.type] || 'a new workout'} today.`;
+  $('plan').textContent = plan;
+  // PRs
+  const sp = [...prs].sort((a,b) => a.lift.localeCompare(b.lift));
+  $('prs').innerHTML = sp.length ? sp.map(r => `<div class="row2"><b>${esc(r.lift)}</b><span>${r.kg} kg <span class="mute">· ${esc(r.date)}</span></span></div>`).join('') : 'No lifts logged yet.';
+  // badges
+  const hrs = s.mins/60, B = [
+    ['🏁','First workout',s.sessions>=1],['🔥','3-day streak',s.streak>=3],['⚡','7-day streak',s.streak>=7],['👑','14-day streak',s.streak>=14],
+    ['💪','10 workouts',s.sessions>=10],['🏆','25 workouts',s.sessions>=25],['⏱','10 hours trained',hrs>=10],['🏋','First PR',prs.length>=1],
+    ['🍗','Fuelled up',meals.length>=1],['🎯','Weekly goal hit',weekDone>=goal]];
+  $('badges').innerHTML = B.map(([i,n,ok]) => `<span class="chip ${ok?'':'off'}">${i} ${n}</span>`).join('');
+}
+$('tf').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const d = {}; const w = num($('tw').value), c = num($('tc').value), p = num($('tp').value);
+  d.weeklyGoal = w ? Math.min(7, Math.max(1, Math.round(w))) : 0; d.calTarget = c ? Math.round(c) : 0; d.proTarget = p ? Math.round(p) : 0;
+  try { await db.doc('accounts/' + cur).update(d); } catch(e){ alert('Could not save targets.'); }
+});
+$('mf').addEventListener('submit', async ev => {
+  ev.preventDefault(); const t = Date.now();
+  try { await db.doc('logs/' + cur + '/meals/' + iso(new Date()) + '-' + t).set({date: iso(new Date()), label: $('ml').value.trim(), cal: num($('mc').value)||0, pro: num($('mp').value)||0, ts: t}); $('ml').value=''; $('mc').value=''; $('mp').value=''; } catch(e){ alert('Could not save meal.'); }
+});
+$('prf').addEventListener('submit', async ev => {
+  ev.preventDefault(); const lift = $('pl').value, kg = num($('pk').value); if(!kg) return;
+  const slug = lift.toLowerCase().replace(/[^a-z]+/g,'-').replace(/-$/,''), old = prs.find(r => r.k === slug);
+  try {
+    if(!old || kg > old.kg){ await db.doc('logs/' + cur + '/prs/' + slug).set({lift, kg, date: iso(new Date())}); $('prmsg').textContent = old ? `New PR! ${lift} up from ${old.kg} kg to ${kg} kg 🔥` : `First ${lift} PR logged: ${kg} kg 🔥`; }
+    else $('prmsg').textContent = `Your best ${lift} is still ${old.kg} kg. Keep pushing!`;
+    $('pk').value = '';
+  } catch(e){ alert('Could not save lift.'); }
+});
+$('lb').addEventListener('click', ev => {
+  const row = ev.target.closest('.lb'); if(!row) return;
+  const other = boardRows.find(r => r.id === row.dataset.id), me = boardRows.find(r => r.id === cur); if(!other || !me || other.id === cur) return;
+  const rows = [['Active days','active'],['Streak','streak'],['Workouts','sessions'],['Hours trained','minutes']];
+  $('cmp').innerHTML = `<h2>You vs ${esc(other.id)}</h2><table><tr><th></th><th>You</th><th>${esc(other.id)}</th></tr>${rows.map(([n,k]) => { const a = k==='minutes'?Math.round(me[k]/60):me[k], b = k==='minutes'?Math.round(other[k]/60):other[k]; return `<tr><td>${n}</td><td style="${a>b?'color:var(--acc);font-weight:700':''}">${a}</td><td style="${b>a?'color:var(--acc);font-weight:700':''}">${b}</td></tr>`; }).join('')}</table>`;
+  $('cmp').hidden = false; $('cmp').scrollIntoView({behavior:'smooth', block:'nearest'});
+});
+const csvCell = v => { let t = String(v ?? ''); if(/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g,'""') + '"'; };
+$('exp').addEventListener('click', async () => {
+  if(!dl){ alert('Export is not available here.'); return; }
+  const rows = [...logs].sort((a,b) => a.date.localeCompare(b.date)).map(l => [l.date, l.type, l.min, l.weight||'', l.note||''].map(csvCell).join(','));
+  try { await dl.save({filename: `winter-arc-${cur}.csv`, data: ['Date,Type,Minutes,Weight kg,Note', ...rows].join('\n')}); } catch(e){}
+});
+function applyTheme(t){ document.documentElement.dataset.theme = t; }
+try { const t = localStorage.getItem('wa_theme'); if(t) applyTheme(t); } catch(e){}
+$('theme').onclick = () => {
+  const now = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const nx = now === 'light' ? 'dark' : 'light'; applyTheme(nx); try { localStorage.setItem('wa_theme', nx); } catch(e){}
+};
+(async () => {
+  try { dl = await claude.use('downloads'); } catch(e){}
+  try { await claude.use('user'); db = await claude.use('db'); } catch(e){}
+  if(!db){ $('err').textContent = 'Open this page from its claude.ai link while signed in to claude.ai.'; return; }
+  let u = null; try { u = sessionStorage.getItem('wa_user'); } catch(e){}
+  if(u){ try { if((await db.doc('accounts/' + u).get()).exists) start(u); } catch(e){} }
+})();
+</script>
+</body>
+</html>
