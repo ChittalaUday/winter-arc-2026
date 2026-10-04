@@ -12,6 +12,7 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 :root[data-theme="light"]{--bg:#e9e9e6;--bg2:#dededa;--card:#fff;--ink:#141416;--mute:#5d5d63;--acc:#f2b800;--line:#cfcfca;--steel:#bdbdb8}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;color:var(--ink);font:400 15px/1.5 Inter,system-ui,sans-serif;background:var(--bg) repeating-linear-gradient(135deg,transparent 0 22px,rgba(255,255,255,.025) 22px 44px)}
 .wrap{max-width:900px;margin:0 auto;padding:18px 16px 70px}
 header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:4px solid var(--acc);padding-bottom:12px}
@@ -82,7 +83,7 @@ button.ghost{background:none;color:var(--mute);border:0;padding:4px 8px;letter-s
 <div id="authwrap" class="authwrap">
 <div class="hero">
   <h2>No days <em>off.</em><br>Own your winter.</h2>
-  <p class="mute">Log every session, build your streak and climb the leaderboard. 90 days. Zero excuses.</p>
+  <p class="mute">Log every session, build your streak and climb the leaderboard. 90 days. Zero excuses. Your data stays in this browser.</p>
   <svg viewBox="0 0 240 70" fill="currentColor" aria-hidden="true"><rect x="0" y="22" width="10" height="26" rx="2"/><rect x="12" y="10" width="14" height="50" rx="3"/><rect x="28" y="2" width="14" height="66" rx="3"/><rect x="44" y="30" width="152" height="10" rx="2"/><rect x="198" y="2" width="14" height="66" rx="3"/><rect x="214" y="10" width="14" height="50" rx="3"/><rect x="230" y="22" width="10" height="26" rx="2"/></svg>
 </div>
 <section id="auth" class="card auth">
@@ -127,7 +128,7 @@ button.ghost{background:none;color:var(--mute);border:0;padding:4px 8px;letter-s
     </form>
   </div>
   <div class="card"><h2>Last 14 days (minutes)</h2><div class="chart" id="chart"></div></div>
-  <div class="card"><h2>Gym leaderboard</h2><div id="lb" class="mute">Loading…</div></div>
+  <div class="card"><h2>Local leaderboard</h2><p class="mute">Compare accounts saved in this browser. Data does not sync across devices.</p><div id="lb" class="mute">Loading…</div></div>
   <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Workout history</h2><button id="exp" type="button">Export CSV</button></div><div style="height:10px"></div><div id="logs" class="mute">No sessions yet. Start today.</div></div>
 </main>
 </div>
@@ -137,8 +138,57 @@ const ARC_START = new Date('2026-10-01T00:00:00'), ARC_DAYS = 90;
 const $ = id => document.getElementById(id);
 const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let prs = [], meals = [], boardRows = [], dl = null;
+let prs = [], meals = [], boardRows = [];
 let db, cur = null, logs = [], acct = null, unsubs = [], mode = 'login', fails = 0, lockUntil = 0;
+
+// Keep the existing tracker flows while persisting documents in this browser.
+function createLocalDatabase(){
+  const key = 'wa_data_v1', listeners = new Set();
+  function read(){
+    const raw = localStorage.getItem(key);
+    const data = raw === null ? {} : JSON.parse(raw);
+    if(!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid saved data');
+    return data;
+  }
+  function snapshot(path, collection){
+    const data = read();
+    if(!collection) return {exists: Object.hasOwn(data, path), data: () => data[path]};
+    const prefix = path + '/';
+    return {docs: Object.keys(data).filter(k => k.startsWith(prefix) && !k.slice(prefix.length).includes('/'))
+      .map(k => ({id: k.slice(prefix.length), data: () => data[k]}))};
+  }
+  function notify(path){
+    for(const listener of [...listeners]){
+      if(path && listener.path !== path && !(listener.collection && path.startsWith(listener.path + '/'))) continue;
+      try { listener.callback(snapshot(listener.path, listener.collection)); }
+      catch(e){ if(listener.error) listener.error(e); else console.error(e); }
+    }
+  }
+  function write(path, value, merge = false){
+    const data = read();
+    const next = merge ? {...data[path], ...value} : value;
+    if(JSON.stringify(data[path]) === JSON.stringify(next)) return;
+    if(value === undefined) delete data[path]; else data[path] = next;
+    localStorage.setItem(key, JSON.stringify(data));
+    notify(path);
+  }
+  function subscribe(path, collection, callback, error){
+    const listener = {path, collection, callback, error};
+    // Read before subscribing so corrupt storage cannot be silently overwritten.
+    const initial = snapshot(path, collection);
+    listeners.add(listener); callback(initial);
+    return () => listeners.delete(listener);
+  }
+  read();
+  const probe = key + '_probe'; localStorage.setItem(probe, '1'); localStorage.removeItem(probe);
+  window.addEventListener('storage', ev => { if(ev.key === key || ev.key === null) notify(); });
+  return {
+    doc: path => ({get: async () => snapshot(path, false), set: async value => write(path, value),
+      update: async value => write(path, value, true), delete: async () => write(path, undefined),
+      onSnapshot: (callback, error) => subscribe(path, false, callback, error)}),
+    collection: path => ({onSnapshot: (callback, error) => subscribe(path, true, callback, error)})
+  };
+}
 
 async function hashPw(pw, saltB64){
   const salt = saltB64 ? Uint8Array.from(atob(saltB64), c => c.charCodeAt(0)) : crypto.getRandomValues(new Uint8Array(16));
@@ -156,7 +206,7 @@ $('tLogin').onclick = () => setMode('login'); $('tSign').onclick = () => setMode
 
 $('af').addEventListener('submit', async ev => {
   ev.preventDefault(); $('err').textContent = '';
-  if(!db){ $('err').textContent = 'Open this page from its claude.ai link while signed in to claude.ai.'; return; }
+  if(!db){ $('err').textContent = 'Browser storage is unavailable or saved data is damaged. Allow site storage and reload; back up existing data before clearing it.'; return; }
   if(Date.now() < lockUntil){ $('err').textContent = 'Too many tries. Wait a few seconds.'; return; }
   const u = $('u').value.trim().toLowerCase(), pw = $('p').value;
   if(!/^[a-z0-9_]{3,20}$/.test(u)){ $('err').textContent = 'Username must be 3–20 letters, numbers or _.'; return; }
@@ -184,7 +234,7 @@ function stats(){
   if(!days.has(iso(d))) d.setDate(d.getDate()-1);
   while(days.has(iso(d))){ streak++; d.setDate(d.getDate()-1); }
   const mins = logs.reduce((a,l) => a + (+l.min||0), 0);
-  const ws = logs.filter(l => l.weight).sort((a,b) => a.date.localeCompare(b.date));
+  const ws = logs.filter(l => l.weight).sort((a,b) => a.date.localeCompare(b.date) || a.ts - b.ts);
   const dw = ws.length > 1 ? ws[ws.length-1].weight - ws[0].weight : null;
   return {streak, mins, sessions: logs.length, active: days.size, dw};
 }
@@ -211,9 +261,10 @@ function renderBoard(snap){
   $('lb').innerHTML = rows.length ? rows.map((r,i) => `<div class="lb" data-id="${esc(r.id)}" style="cursor:pointer" title="Tap to compare"><span class="rank">${i+1}</span><span class="n">${esc(r.id)}${r.id===cur?' (you)':''}</span><span class="mute">${r.active} days · ${r.streak}🔥 · ${Math.round(r.minutes/60)}h</span></div>`).join('') : 'Be the first on the board.';
 }
 function start(u){
-  cur = u; try { sessionStorage.setItem('wa_user', u); } catch(e){}
+  localStorage.setItem('wa_user', u);
+  cur = u; logs = []; prs = []; meals = []; boardRows = []; $('prmsg').textContent = ''; $('cmp').hidden = true;
   $('authwrap').hidden = true; $('app').hidden = false; $('me').hidden = false;
-  $('meName').textContent = u; $('pName').textContent = u; $('d').value = iso(new Date());
+  $('meName').textContent = u; $('pName').textContent = u; $('d').value = iso(new Date()); $('d').max = iso(new Date());
   unsubs.push(db.doc('accounts/' + u).onSnapshot(sn => { acct = sn.exists ? sn.data() : {}; $('pGoal').textContent = acct.goal ? 'Goal: ' + acct.goal : 'No goal set yet'; fillTargets(); renderExtras(); }));
   unsubs.push(db.collection('logs/' + u + '/entries').onSnapshot(sn => { logs = sn.docs.map(d => ({k: d.id, ...d.data()})).filter(l => l.date); render(); renderExtras(); publishBoard(); }, () => { $('logs').textContent = 'Could not load your log.'; }));
   unsubs.push(db.collection('logs/' + u + '/prs').onSnapshot(sn => { prs = sn.docs.map(d => ({k: d.id, ...d.data()})); renderExtras(); }));
@@ -222,7 +273,7 @@ function start(u){
 }
 function logout(){
   unsubs.forEach(f => { try { f(); } catch(e){} }); unsubs = []; cur = null; logs = []; acct = null; prs = []; meals = []; $('cmp').hidden = true;
-  try { sessionStorage.removeItem('wa_user'); } catch(e){}
+  try { localStorage.removeItem('wa_user'); } catch(e){}
   $('p').value = ''; $('app').hidden = true; $('me').hidden = true; $('authwrap').hidden = false;
 }
 $('out').onclick = logout;
@@ -232,13 +283,14 @@ $('editG').onclick = async () => {
 };
 $('f').addEventListener('submit', async ev => {
   ev.preventDefault(); const w = parseFloat($('w').value);
+  if(!cur || !$('d').value || $('d').value > iso(new Date())){ alert('Choose today or an earlier workout date.'); return; }
   const rec = {date: $('d').value, type: $('t').value, min: parseInt($('m').value,10), note: $('n').value.trim(), ts: Date.now()};
   if(w) rec.weight = w;
-  try { await db.doc('logs/' + cur + '/entries/' + rec.date + '-' + rec.ts).set(rec); $('m').value=''; $('w').value=''; $('n').value=''; } catch(e){ alert('Could not save. Try again.'); }
+  try { await db.doc('logs/' + cur + '/entries/' + rec.date + '-' + crypto.randomUUID()).set(rec); $('m').value=''; $('w').value=''; $('n').value=''; } catch(e){ alert('Could not save. Try again.'); }
 });
 $('logs').addEventListener('click', async ev => {
   const k = ev.target.dataset && ev.target.dataset.k; if(!k) return;
-  try { await db.doc('logs/' + cur + '/entries/' + k).delete(); } catch(e){}
+  try { await db.doc('logs/' + cur + '/entries/' + k).delete(); } catch(e){ alert('Could not delete workout. Try again.'); }
 });
 const num = v => { const n = parseFloat(v); return isNaN(n) ? null : n; };
 function weekStart(){ const d = new Date(); d.setDate(d.getDate() - (d.getDay()+6)%7); return iso(d); }
@@ -254,7 +306,7 @@ function renderExtras(){
   if(!cur || !acct) return;
   const s = stats(), today = iso(new Date()), ws = weekStart();
   const goal = acct.weeklyGoal || 4;
-  const weekDone = new Set(logs.filter(l => l.date >= ws).map(l => l.date)).size;
+  const weekDone = new Set(logs.filter(l => l.date >= ws && l.date <= today).map(l => l.date)).size;
   const C = 2*Math.PI*42, off = C*(1 - Math.min(1, weekDone/goal));
   $('ring').innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--steel)" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}" transform="rotate(-90 50 50)"/><text x="50" y="58" text-anchor="middle">${weekDone}/${goal}</text></svg><div><b>${weekDone >= goal ? 'Goal smashed!' : (goal - weekDone) + ' more workout' + (goal-weekDone>1?'s':'') + ' this week'}</b><div class="mute">Weeks run Monday to Sunday.</div></div>`;
   const tm = meals.filter(m => m.date === today);
@@ -290,7 +342,7 @@ $('tf').addEventListener('submit', async ev => {
 });
 $('mf').addEventListener('submit', async ev => {
   ev.preventDefault(); const t = Date.now();
-  try { await db.doc('logs/' + cur + '/meals/' + iso(new Date()) + '-' + t).set({date: iso(new Date()), label: $('ml').value.trim(), cal: num($('mc').value)||0, pro: num($('mp').value)||0, ts: t}); $('ml').value=''; $('mc').value=''; $('mp').value=''; } catch(e){ alert('Could not save meal.'); }
+  try { await db.doc('logs/' + cur + '/meals/' + iso(new Date()) + '-' + crypto.randomUUID()).set({date: iso(new Date()), label: $('ml').value.trim(), cal: num($('mc').value)||0, pro: num($('mp').value)||0, ts: t}); $('ml').value=''; $('mc').value=''; $('mp').value=''; } catch(e){ alert('Could not save meal.'); }
 });
 $('prf').addEventListener('submit', async ev => {
   ev.preventDefault(); const lift = $('pl').value, kg = num($('pk').value); if(!kg) return;
@@ -310,9 +362,12 @@ $('lb').addEventListener('click', ev => {
 });
 const csvCell = v => { let t = String(v ?? ''); if(/^[=+\-@]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g,'""') + '"'; };
 $('exp').addEventListener('click', async () => {
-  if(!dl){ alert('Export is not available here.'); return; }
   const rows = [...logs].sort((a,b) => a.date.localeCompare(b.date)).map(l => [l.date, l.type, l.min, l.weight||'', l.note||''].map(csvCell).join(','));
-  try { await dl.save({filename: `winter-arc-${cur}.csv`, data: ['Date,Type,Minutes,Weight kg,Note', ...rows].join('\n')}); } catch(e){}
+  const blob = new Blob(['\uFEFF' + ['Date,Type,Minutes,Weight kg,Note', ...rows].join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = `winter-arc-${cur}.csv`;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 function applyTheme(t){ document.documentElement.dataset.theme = t; }
 try { const t = localStorage.getItem('wa_theme'); if(t) applyTheme(t); } catch(e){}
@@ -321,10 +376,9 @@ $('theme').onclick = () => {
   const nx = now === 'light' ? 'dark' : 'light'; applyTheme(nx); try { localStorage.setItem('wa_theme', nx); } catch(e){}
 };
 (async () => {
-  try { dl = await claude.use('downloads'); } catch(e){}
-  try { await claude.use('user'); db = await claude.use('db'); } catch(e){}
-  if(!db){ $('err').textContent = 'Open this page from its claude.ai link while signed in to claude.ai.'; return; }
-  let u = null; try { u = sessionStorage.getItem('wa_user'); } catch(e){}
+  try { db = createLocalDatabase(); } catch(e){}
+  if(!db){ $('err').textContent = 'Browser storage is unavailable or saved data is damaged. Allow site storage and reload; back up existing data before clearing it.'; return; }
+  let u = null; try { u = localStorage.getItem('wa_user'); } catch(e){}
   if(u){ try { if((await db.doc('accounts/' + u).get()).exists) start(u); } catch(e){} }
 })();
 </script>
